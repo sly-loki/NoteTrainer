@@ -12,7 +12,7 @@
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="fill_parent">
 
         <com.example.link.pianoteacher.StoveViewer
             android:id="@+id/stove"
@@ -21,15 +21,23 @@
 
         <EditText
             android:layout_width="fill_parent"
-            android:layout_height="205dp"
+            android:layout_height="match_parent"
             android:inputType="textMultiLine"
             android:ems="10"
-            android:id="@+id/editText" />
+            android:id="@+id/editText"
+            android:layout_weight="1" />
+
+        <com.example.link.pianoteacher.PianoKeyboard
+            android:id="@+id/keyboard"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
 
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="fill_parent"
+            android:layout_weight="1">
 
             <Button
                 android:layout_width="fill_parent"
