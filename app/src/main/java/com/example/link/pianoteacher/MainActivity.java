@@ -152,26 +152,31 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message inputMessage) {
             super.handleMessage(inputMessage);
             String e = inputMessage.getData().getString("error");
-            if (e != null && !e.equals(""))
+            if (e != null && !e.equals("")) {
                 connectLabel.setText(e);
-            else {
-                int noteNum;
-                int state;
-                String m = inputMessage.getData().getString("key");
-                if (m != null) {
-                    text.append(m);
-                    text.append("\n");
-                    String s = m.substring(0,2);
-                    noteNum = Integer.parseInt(s, 16) - 20;
-                    if (m.getBytes()[3] == 'u')
-                        state = PianoKeyboard.NOTE_RELEASED;
-                    else
-                        state = PianoKeyboard.NOTE_PRESSED;
-                    keyboard.setNoteState(noteNum, state);
-                }
+                connectionThread = null;
+                return;
             }
 
+            e = inputMessage.getData().getString("success");
+            if (e != null && !e.equals("")) {
+                connectLabel.setText(e);
+            }
 
+            int noteNum;
+            int state;
+            String m = inputMessage.getData().getString("key");
+            if (m != null) {
+                text.append(m);
+                text.append("\n");
+                String s = m.substring(0,2);
+                noteNum = Integer.parseInt(s, 16) - 20;
+                if (m.getBytes()[3] == 'u')
+                    state = PianoKeyboard.NOTE_RELEASED;
+                else
+                    state = PianoKeyboard.NOTE_PRESSED;
+                keyboard.setNoteState(noteNum, state);
+            }
         }
     };
 
@@ -186,6 +191,8 @@ public class MainActivity extends AppCompatActivity {
         text.append("start");
         text.setFocusable(false);
         stove.setCurrentNote(5);
+
+        tryConnectToServer();
     }
 
     private Socket socket = null;
@@ -194,6 +201,10 @@ public class MainActivity extends AppCompatActivity {
     private Thread connectionThread = null;
 
     public void connectButtonClicked(View view) {
+        tryConnectToServer();
+    }
+
+    private void tryConnectToServer() {
         if (connectionThread == null) {
             connectionThread = new Thread(serverConnectionTask);
             connectionThread.start();
@@ -205,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             if (socket == null) {
+                String errorMessage = "Connection failed";
                 try {
                     socket = new Socket("192.168.0.100", 1289);
                     is = socket.getInputStream();
@@ -212,20 +224,33 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch (IOException e)
                 {
-                    e.getMessage();
+                    errorMessage = e.getMessage();
                 }
                 catch (Exception e)
                 {
                     e.printStackTrace();
                 }
+
+                if (socket == null) {
+                    Message mess = new Message();
+                    mess.getData().putString("error", errorMessage);
+                    messageHandler.sendMessage(mess);
+                    return;
+                }
+                else {
+                    Message mess = new Message();
+                    mess.getData().putString("success", "Connected");
+                    messageHandler.sendMessage(mess);
+                }
             }
 
             while(true) {
                 try {
-                    is.read(message, 0, 5);
-                    Message mess = new Message();
-                    mess.getData().putString("key", new String(message,0,5));
-                    messageHandler.sendMessage(mess);
+                    if (is.read(message, 0, 5) == 5) {
+                        Message mess = new Message();
+                        mess.getData().putString("key", new String(message, 0, 5));
+                        messageHandler.sendMessage(mess);
+                    }
                 }
                 catch (IOException e) {
                     e.printStackTrace();
