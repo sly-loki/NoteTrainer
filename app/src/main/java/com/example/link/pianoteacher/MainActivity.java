@@ -1,9 +1,12 @@
 package com.example.link.pianoteacher;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
@@ -40,23 +43,92 @@ class MusicBox {
 }
 
 class StoveViewer extends View {
+
     Paint p = new Paint();
+    Bitmap bassBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bass);
+    Bitmap trebleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.treble);
+    private final Rect finalTreblePosition = new Rect(100,50,200,350);
+    private final Rect finalBassPosition = new Rect(100,100,200,300);
+
+    private Rect trebleSize;
+    private Rect bassSize;
+
     private static final int LINE_SPACE = 50;
 
     public StoveViewer(Context context, AttributeSet attrs) {
         super(context, attrs);
-        p.setTextSize(300);
+        p.setTextSize(166);
         p.setStrokeWidth(5);
+        trebleSize =  new Rect(0,0,trebleBitmap.getWidth(), trebleBitmap.getHeight());
+        bassSize =  new Rect(0,0,bassBitmap.getWidth(), bassBitmap.getHeight());
     }
 
-    private int noteNumer = 0;
+    private int noteNumer = MusicBox.C1_NOTE_INDEX;
+    private enum StaveMode {TREBLE, BASS};
+    private enum NoteModifier {DIES, BEMOLE, BECAR}
+
+    class NoteDrawDescriptor {
+        public int position;
+        public NoteModifier modifier;
+        public StaveMode mode;
+    }
+
+    private NoteDrawDescriptor notIndexToDescriptor(int index) {
+
+        NoteDrawDescriptor result = new NoteDrawDescriptor();
+
+        if (index>=MusicBox.C1_NOTE_INDEX)
+            result.mode = StaveMode.TREBLE;
+        else {
+            result.mode = StaveMode.BASS;
+        }
+
+        int notePosition = -1;
+        if (result.mode == StaveMode.TREBLE) {
+            int c1Shift = index - MusicBox.C1_NOTE_INDEX;
+            int octaveIndex = c1Shift % MusicBox.NOTES_IN_OCTAVE;
+            notePosition = c1Shift / MusicBox.NOTES_IN_OCTAVE * MusicBox.WHITE_NOTES_IN_OCTAVE +
+                    MusicBox.OCTAVE_INDEX_TO_WHITE_INDEX[octaveIndex];
+            if (MusicBox.RELATIVE_BLACK_NOTE_INDEXES.contains(octaveIndex)) {
+                result.modifier = NoteModifier.DIES;
+            }
+
+        } else {
+            int c1Shift = MusicBox.C1_NOTE_INDEX - index;
+            int octaveIndex = 11 - c1Shift % MusicBox.NOTES_IN_OCTAVE;
+
+            notePosition = 11 - ((c1Shift / MusicBox.NOTES_IN_OCTAVE + 1) * MusicBox.WHITE_NOTES_IN_OCTAVE) +
+                    MusicBox.OCTAVE_INDEX_TO_WHITE_INDEX[octaveIndex] + 2;
+            if (MusicBox.RELATIVE_BLACK_NOTE_INDEXES.contains(octaveIndex)) {
+                result.modifier = NoteModifier.DIES;
+            }
+        }
+        if (notePosition > 11 || notePosition < 0)
+            notePosition = -1;
+
+        result.position = notePosition;
+        return result;
+    }
 
     protected void onDraw(Canvas canvas) {
         for (int i = 0; i < 5; i++) {
             canvas.drawLine(100, i*LINE_SPACE+100, getWidth()-100, i*LINE_SPACE+100, p);
         }
 
-        canvas.drawText("\u2669", 100+(5*60), 100+(noteNumer*LINE_SPACE/2), p);
+        NoteDrawDescriptor desc = notIndexToDescriptor(noteNumer);
+
+        if (desc.mode == StaveMode.TREBLE)
+            canvas.drawBitmap(trebleBitmap, trebleSize, finalTreblePosition, p);
+        else {
+            canvas.drawBitmap(bassBitmap, bassSize, finalBassPosition, p);
+        }
+
+        if (desc.position == 0) {
+            canvas.drawLine(120+(5*60), 5*LINE_SPACE+100, 250+(5*60), 5*LINE_SPACE+100, p);
+        }
+
+        if (desc.position != -1)
+            canvas.drawText("\u2669", 100 + (5 * 60), (11 - desc.position) * LINE_SPACE / 2 + 70, p);
     }
 
     public void setCurrentNote(int noteNumber) {
@@ -128,7 +200,6 @@ class PianoKeyboard extends View {
         float note_width = width / 7.0f;
         float black_note_width = note_width * 0.6f;
         float black_note_height = height * 0.7f;
-        float black_note_bottom = bottom + height - black_note_height;
 
         for (int i = 0; i < 7; i++) {
             float currentNoteLeft = left + note_width * i;
@@ -165,6 +236,7 @@ public class MainActivity extends AppCompatActivity {
     private PianoKeyboard keyboard;
     protected Handler messageHandler = new Handler() {
 
+        private final int NOTE_SHIFT = 20;
         @Override
         public void handleMessage(Message inputMessage) {
             super.handleMessage(inputMessage);
@@ -187,11 +259,14 @@ public class MainActivity extends AppCompatActivity {
                 text.append(m);
                 text.append("\n");
                 String s = m.substring(0,2);
-                noteNum = Integer.parseInt(s, 16) - 20;
-                if (m.getBytes()[3] == 'u')
+                noteNum = Integer.parseInt(s, 16) - NOTE_SHIFT;
+                if (m.getBytes()[3] == 'u') {
                     state = PianoKeyboard.NOTE_RELEASED;
-                else
+                }
+                else {
                     state = PianoKeyboard.NOTE_PRESSED;
+                    stove.setCurrentNote(noteNum);
+                }
                 keyboard.setNoteState(noteNum, state);
             }
         }
@@ -207,7 +282,6 @@ public class MainActivity extends AppCompatActivity {
         keyboard = (PianoKeyboard)findViewById(R.id.keyboard);
         text.append("start");
         text.setFocusable(false);
-        stove.setCurrentNote(5);
 
         tryConnectToServer();
     }
