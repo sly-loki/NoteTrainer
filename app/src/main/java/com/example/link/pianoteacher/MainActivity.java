@@ -26,6 +26,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.LogRecord;
 
 class MusicBox {
@@ -315,9 +316,55 @@ class PianoKeyboard extends View {
 public class MainActivity extends AppCompatActivity {
 
     private StoveViewer stove;
+    private StoveViewer staticStove;
     private EditText text;
     private TextView connectLabel;
     private PianoKeyboard keyboard;
+
+    public void startGame(View view) {
+        if (currentMode != ApplicationMode.GAME) {
+            gameController.startGame();
+        }
+        else {
+            gameController.stopGame();
+            currentMode = ApplicationMode.START;
+        }
+    }
+
+    enum ApplicationMode {START, GAME}
+    private ApplicationMode currentMode = ApplicationMode.START;
+
+    class GameController {
+        Random r = new Random();
+
+        private int nextNote = MusicBox.C1_NOTE_INDEX;
+
+        private int getRandomNote(int startIndex, int endIndex) {
+            return r.nextInt(endIndex - startIndex) + startIndex;
+        }
+
+        public void startGame() {
+            currentMode = ApplicationMode.GAME;
+            requestNextNote();
+        }
+
+        private void requestNextNote() {
+            nextNote = getRandomNote(MusicBox.C1_NOTE_INDEX - 12, MusicBox.C1_NOTE_INDEX + 12);
+            staticStove.setCurrentNote(nextNote);
+        }
+
+        void notePressed(int noteNum) {
+            if (noteNum == nextNote)
+                requestNextNote();
+        }
+
+        public void stopGame() {
+            staticStove.setCurrentNote(-1);
+        }
+    }
+
+    private GameController gameController = new GameController();
+
     protected Handler messageHandler = new Handler() {
 
         private final int NOTE_SHIFT = 20;
@@ -350,6 +397,8 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     state = PianoKeyboard.NOTE_PRESSED;
                     stove.setCurrentNote(noteNum);
+                    if (currentMode == ApplicationMode.GAME)
+                        gameController.notePressed(noteNum);
                 }
                 keyboard.setNoteState(noteNum, state);
             }
@@ -361,6 +410,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         stove = (StoveViewer)findViewById(R.id.stove);
+        staticStove = (StoveViewer)findViewById(R.id.stove_2);
         text = (EditText)findViewById(R.id.editText);
         connectLabel = (TextView)findViewById(R.id.statusLabel);
         keyboard = (PianoKeyboard)findViewById(R.id.keyboard);
@@ -433,6 +483,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
-
 }
