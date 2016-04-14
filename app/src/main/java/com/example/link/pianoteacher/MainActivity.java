@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.AsyncTask;
@@ -47,11 +48,8 @@ class StoveViewer extends View {
     Paint p = new Paint();
     Bitmap bassBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bass);
     Bitmap trebleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.treble);
-    private final Rect finalTreblePosition = new Rect(100,50,200,350);
-    private final Rect finalBassPosition = new Rect(100,100,200,300);
-
-    private Rect trebleSize;
-    private Rect bassSize;
+    Bitmap noteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.quarter_note);
+    Bitmap downNoteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.quarter_note);
 
     private static final int LINE_SPACE = 50;
 
@@ -59,11 +57,9 @@ class StoveViewer extends View {
         super(context, attrs);
         p.setTextSize(166);
         p.setStrokeWidth(5);
-        trebleSize =  new Rect(0,0,trebleBitmap.getWidth(), trebleBitmap.getHeight());
-        bassSize =  new Rect(0,0,bassBitmap.getWidth(), bassBitmap.getHeight());
     }
 
-    private int noteNumer = MusicBox.C1_NOTE_INDEX;
+    private int noteNumer = -1;
     private enum StaveMode {TREBLE, BASS};
     private enum NoteModifier {DIES, BEMOLE, BECAR}
 
@@ -110,25 +106,54 @@ class StoveViewer extends View {
         return result;
     }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        float trebleProportion = h * 0.7f / trebleBitmap.getHeight();
+        float bassProportion = h * 0.4f / bassBitmap.getHeight();
+        float noteProportion = h * 0.5f / noteBitmap.getHeight();
+
+        trebleBitmap = Bitmap.createScaledBitmap(trebleBitmap, (int)(trebleBitmap.getWidth()*trebleProportion), (int)(trebleBitmap.getHeight()*trebleProportion), false);
+        bassBitmap = Bitmap.createScaledBitmap(bassBitmap, (int)(bassBitmap.getWidth()*bassProportion), (int)(bassBitmap.getHeight()*bassProportion), false);
+        noteBitmap = Bitmap.createScaledBitmap(noteBitmap, (int) (noteBitmap.getWidth() * noteProportion), (int) (noteBitmap.getHeight() * noteProportion), false);
+        Matrix m = new Matrix();
+        m.postRotate(180);
+        downNoteBitmap = Bitmap.createBitmap(noteBitmap, 0, 0, noteBitmap.getWidth(), noteBitmap.getHeight(), m, true);
+
+    }
+
     protected void onDraw(Canvas canvas) {
+
+        int interLineSpace = getHeight() / 10;
+        int firstLine = 3*interLineSpace;
+
         for (int i = 0; i < 5; i++) {
-            canvas.drawLine(100, i*LINE_SPACE+100, getWidth()-100, i*LINE_SPACE+100, p);
+            canvas.drawLine(getWidth()*0.05f, i*interLineSpace+3*interLineSpace, getWidth()*0.95f, i*interLineSpace+3*interLineSpace, p);
         }
+
+        if (noteNumer == -1)
+            return;
 
         NoteDrawDescriptor desc = notIndexToDescriptor(noteNumer);
 
         if (desc.mode == StaveMode.TREBLE)
-            canvas.drawBitmap(trebleBitmap, trebleSize, finalTreblePosition, p);
+            canvas.drawBitmap(trebleBitmap, getWidth()*0.05f, getHeight()*0.1f, p);
         else {
-            canvas.drawBitmap(bassBitmap, bassSize, finalBassPosition, p);
+            canvas.drawBitmap(bassBitmap, getWidth()*0.05f, getHeight()*0.1f, p);
         }
 
         if (desc.position == 0) {
-            canvas.drawLine(120+(5*60), 5*LINE_SPACE+100, 250+(5*60), 5*LINE_SPACE+100, p);
+            float centralPoint = getWidth() * 0.4f;
+            canvas.drawLine(centralPoint, 5*interLineSpace+firstLine, centralPoint + 85, 5*interLineSpace+firstLine, p);
         }
 
-        if (desc.position != -1)
-            canvas.drawText("\u2669", 100 + (5 * 60), (11 - desc.position) * LINE_SPACE / 2 + 70, p);
+        if (desc.position != -1) {
+            if (desc.position < 6)
+                canvas.drawBitmap(noteBitmap, getWidth() * 0.4f, (11-desc.position)*interLineSpace*0.5f + firstLine - noteBitmap.getHeight() + 19, p);
+            else
+                canvas.drawBitmap(downNoteBitmap, getWidth() * 0.4f, (11 - desc.position) * interLineSpace * 0.5f + firstLine - 55, p);
+        }
+
     }
 
     public void setCurrentNote(int noteNumber) {
