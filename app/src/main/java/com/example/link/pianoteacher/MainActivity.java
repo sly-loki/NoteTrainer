@@ -7,13 +7,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Rect;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -21,21 +20,20 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.logging.LogRecord;
 
 class MusicBox {
+    public static final int INVALIDE_NOTE = -1;
     public static final int WHITE_NOTE_COUNT = 52;
     public static final int NOTE_COUNT = 88;
     public static final int BLACK_NOTE_COUNT = NOTE_COUNT - WHITE_NOTE_COUNT;
     public static final int NOTES_IN_OCTAVE = 12;
     public static final int WHITE_NOTES_IN_OCTAVE = 7;
-    public static final int C1_NOTE_INDEX = 40;
+    public static final int C1_NOTE_INDEX = 39;
+    public static final int C1_NOTE_WHITE_INDEX = 23;
     public static final int C2_NOTE_INDEX = C1_NOTE_INDEX + NOTES_IN_OCTAVE;
     public static final int C3_NOTE_INDEX = C2_NOTE_INDEX + NOTES_IN_OCTAVE;
     public static final int C4_NOTE_INDEX = C3_NOTE_INDEX + NOTES_IN_OCTAVE;
@@ -51,8 +49,8 @@ class StoveViewer extends View {
     Bitmap trebleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.treble);
     Bitmap noteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.quarter_note);
     Bitmap downNoteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.quarter_note);
-
-    private static final int LINE_SPACE = 50;
+    Bitmap sharpBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.sharp);
+    Bitmap bemolBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bemol);
 
     public StoveViewer(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -60,50 +58,69 @@ class StoveViewer extends View {
         p.setStrokeWidth(5);
     }
 
-    private int noteNumer = -1;
-    private enum StaveMode {TREBLE, BASS};
-    private enum NoteModifier {DIES, BEMOLE, BECAR}
+    private int noteNumber = MusicBox.INVALIDE_NOTE;
+
+    public enum StaveMode {TREBLE, BASS}
+    StaveMode staveMode = StaveMode.BASS;
+
+    private enum NoteModifier {NORMAL, DIES, BEMOL, BECAR}
+
+
 
     class NoteDrawDescriptor {
         public int position;
-        public NoteModifier modifier;
-        public StaveMode mode;
+        public NoteModifier modifier = NoteModifier.NORMAL;
     }
 
-    private NoteDrawDescriptor notIndexToDescriptor(int index) {
+    private static final int MISSED_NOTES_IN_SUB_CONTR_OCTAVE = 9;
+    private static final int NOTES_IN_SUB_CONTR_OCTAVE = 3;
+    private static final int WHITE_NOTES_IN_SUB_CONTR_OCTAVE = 2;
+
+    private int whiteNoteToLine(int note, StaveMode mode) {
+
+        final int ZERO_POS_NOTE_IN_TREBLE = MusicBox.C1_NOTE_WHITE_INDEX + 6; //note on third line
+        final int ZERO_POS_NOTE_IN_BASS = MusicBox.C1_NOTE_WHITE_INDEX - 6;
+
+        if (mode == StaveMode.TREBLE) {
+            return note - ZERO_POS_NOTE_IN_TREBLE;
+        } else {
+            return note - ZERO_POS_NOTE_IN_BASS;
+        }
+    }
+
+
+    private NoteDrawDescriptor noteIndexToDescriptor(int index, StaveMode mode) {
 
         NoteDrawDescriptor result = new NoteDrawDescriptor();
+        Log.d("myPiano", "index "+index);
 
-        if (index>=MusicBox.C1_NOTE_INDEX)
-            result.mode = StaveMode.TREBLE;
+        int octaveIndex;
+        if (index < NOTES_IN_SUB_CONTR_OCTAVE) {
+            octaveIndex = MISSED_NOTES_IN_SUB_CONTR_OCTAVE + index % MusicBox.NOTES_IN_OCTAVE;
+        }
         else {
-            result.mode = StaveMode.BASS;
+            octaveIndex = (index-NOTES_IN_SUB_CONTR_OCTAVE) % MusicBox.NOTES_IN_OCTAVE;
         }
 
-        int notePosition = -1;
-        if (result.mode == StaveMode.TREBLE) {
-            int c1Shift = index - MusicBox.C1_NOTE_INDEX;
-            int octaveIndex = c1Shift % MusicBox.NOTES_IN_OCTAVE;
-            notePosition = c1Shift / MusicBox.NOTES_IN_OCTAVE * MusicBox.WHITE_NOTES_IN_OCTAVE +
-                    MusicBox.OCTAVE_INDEX_TO_WHITE_INDEX[octaveIndex];
-            if (MusicBox.RELATIVE_BLACK_NOTE_INDEXES.contains(octaveIndex)) {
-                result.modifier = NoteModifier.DIES;
-            }
 
+        Log.d("myPiano", "octaveIndex "+octaveIndex);
+
+        int noteWhiteIndex;
+        if (index >= NOTES_IN_SUB_CONTR_OCTAVE) {
+            noteWhiteIndex = (index - NOTES_IN_SUB_CONTR_OCTAVE)/MusicBox.NOTES_IN_OCTAVE *
+                    MusicBox.WHITE_NOTES_IN_OCTAVE +
+                    MusicBox.OCTAVE_INDEX_TO_WHITE_INDEX[octaveIndex] +
+                    WHITE_NOTES_IN_SUB_CONTR_OCTAVE;
         } else {
-            int c1Shift = MusicBox.C1_NOTE_INDEX - index;
-            int octaveIndex = 11 - c1Shift % MusicBox.NOTES_IN_OCTAVE;
-
-            notePosition = 11 - ((c1Shift / MusicBox.NOTES_IN_OCTAVE + 1) * MusicBox.WHITE_NOTES_IN_OCTAVE) +
-                    MusicBox.OCTAVE_INDEX_TO_WHITE_INDEX[octaveIndex] + 2;
-            if (MusicBox.RELATIVE_BLACK_NOTE_INDEXES.contains(octaveIndex)) {
-                result.modifier = NoteModifier.DIES;
-            }
+            noteWhiteIndex = index / 2;
         }
-        if (notePosition > 11 || notePosition < 0)
-            notePosition = -1;
+        Log.d("myPiano", "whiteIndex "+noteWhiteIndex);
 
-        result.position = notePosition;
+        if (MusicBox.RELATIVE_BLACK_NOTE_INDEXES.contains(octaveIndex)) {
+            result.modifier = NoteModifier.DIES;
+        }
+
+        result.position = whiteNoteToLine(noteWhiteIndex, mode);
         return result;
     }
 
@@ -113,6 +130,7 @@ class StoveViewer extends View {
         float trebleProportion = h * 0.7f / trebleBitmap.getHeight();
         float bassProportion = h * 0.4f / bassBitmap.getHeight();
         float noteProportion = h * 0.5f / noteBitmap.getHeight();
+        float alterationProportion = h * 0.15f / sharpBitmap.getHeight();
 
         trebleBitmap = Bitmap.createScaledBitmap(trebleBitmap, (int)(trebleBitmap.getWidth()*trebleProportion), (int)(trebleBitmap.getHeight()*trebleProportion), false);
         bassBitmap = Bitmap.createScaledBitmap(bassBitmap, (int)(bassBitmap.getWidth()*bassProportion), (int)(bassBitmap.getHeight()*bassProportion), false);
@@ -120,46 +138,83 @@ class StoveViewer extends View {
         Matrix m = new Matrix();
         m.postRotate(180);
         downNoteBitmap = Bitmap.createBitmap(noteBitmap, 0, 0, noteBitmap.getWidth(), noteBitmap.getHeight(), m, true);
+        sharpBitmap = Bitmap.createScaledBitmap(sharpBitmap, (int) (sharpBitmap.getWidth() * alterationProportion), (int) (sharpBitmap.getHeight() * alterationProportion), false);
+        bemolBitmap = Bitmap.createScaledBitmap(bemolBitmap, (int) (bemolBitmap.getWidth() * alterationProportion), (int) (bemolBitmap.getHeight() * alterationProportion), false);
 
     }
 
+    @Override
     protected void onDraw(Canvas canvas) {
 
         int interLineSpace = getHeight() / 10;
         int firstLine = 3*interLineSpace;
 
         for (int i = 0; i < 5; i++) {
-            canvas.drawLine(getWidth()*0.05f, i*interLineSpace+3*interLineSpace, getWidth()*0.95f, i*interLineSpace+3*interLineSpace, p);
+            canvas.drawLine(getWidth()*0.05f, i*interLineSpace+firstLine, getWidth()*0.95f, i*interLineSpace+firstLine, p);
         }
 
-        if (noteNumer == -1)
+        if (noteNumber == -1)
             return;
 
-        NoteDrawDescriptor desc = notIndexToDescriptor(noteNumer);
+        NoteDrawDescriptor desc = noteIndexToDescriptor(noteNumber, staveMode);
+        Log.d("myPiano", "position " + desc.position);
 
-        if (desc.mode == StaveMode.TREBLE)
-            canvas.drawBitmap(trebleBitmap, getWidth()*0.05f, getHeight()*0.1f, p);
+
+        if (staveMode == StaveMode.TREBLE)
+            canvas.drawBitmap(trebleBitmap, getWidth()*0.05f, getHeight()*0.15f, p);
         else {
-            canvas.drawBitmap(bassBitmap, getWidth()*0.05f, getHeight()*0.1f, p);
+            canvas.drawBitmap(bassBitmap, getWidth() * 0.05f, getHeight() * 0.3f, p);
         }
 
-        if (desc.position == 0) {
+        if (desc.position < -7 || desc.position > 7)
+            return;
+
+        Bitmap note;
+        float x = getWidth() * 0.4f;
+        float baseY = interLineSpace * 2.5f + firstLine;
+        float y;
+        float alterY;
+        if (desc.position < 0) {
+            y = baseY - desc.position*interLineSpace*0.5f - noteBitmap.getHeight() + 19;
+            note = noteBitmap;
+            alterY = y + note.getHeight() - sharpBitmap.getHeight() - 10;
+        }
+        else {
+            y = baseY - desc.position*interLineSpace*0.5f - 55;
+            note = downNoteBitmap;
+            alterY = y + 13;
+        }
+
+        if (desc.position <= -6) {
             float centralPoint = getWidth() * 0.4f;
             canvas.drawLine(centralPoint, 5*interLineSpace+firstLine, centralPoint + 85, 5*interLineSpace+firstLine, p);
         }
 
-        if (desc.position != -1) {
-            if (desc.position < 6)
-                canvas.drawBitmap(noteBitmap, getWidth() * 0.4f, (11-desc.position)*interLineSpace*0.5f + firstLine - noteBitmap.getHeight() + 19, p);
-            else
-                canvas.drawBitmap(downNoteBitmap, getWidth() * 0.4f, (11 - desc.position) * interLineSpace * 0.5f + firstLine - 55, p);
+        switch (desc.modifier) {
+            case DIES:
+                canvas.drawBitmap(sharpBitmap, x - sharpBitmap.getWidth() - 10, alterY, p);
+                break;
+            case BEMOL:
+                canvas.drawBitmap(bemolBitmap, x - bemolBitmap.getWidth() - 10, alterY, p);
+                break;
+            default:
+                break;
         }
+        canvas.drawBitmap(note, x, y, p);
 
     }
 
     public void setCurrentNote(int noteNumber) {
-        this.noteNumer = noteNumber;
+        this.noteNumber = noteNumber;
         invalidate();
+    }
+
+    public void setMode(StaveMode mode)
+    {
+        if (mode != staveMode) {
+            staveMode = mode;
+            invalidate();
+        }
     }
 }
 
@@ -256,6 +311,7 @@ class PianoKeyboard extends View {
         canvas.drawRect(left, bottom, left + width, bottom + height, paint);
         canvas.drawRect(left, bottom, left + width, bottom + height, strokePaint);
     }
+
     private void drawWhiteNote(Canvas canvas, int state, float left, float bottom, float width, float height) {
         Paint paint;
         if (state == NOTE_RELEASED)
@@ -367,7 +423,7 @@ public class MainActivity extends AppCompatActivity {
 
     protected Handler messageHandler = new Handler() {
 
-        private final int NOTE_SHIFT = 20;
+        private final int NOTE_SHIFT = 21;
         @Override
         public void handleMessage(Message inputMessage) {
             super.handleMessage(inputMessage);
