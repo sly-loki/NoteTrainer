@@ -9,13 +9,11 @@ import android.view.View;
 
 class PianoKeyboard extends View {
 
-    static final int NOTE_COUNT = 88;
-
     private Paint p = new Paint();
     private Paint strokePaint = new Paint();
     private Paint activePaint = new Paint();
 
-    private int notes[] = new int[NOTE_COUNT];
+    private int notes[] = new int[MusicBox.NOTE_COUNT];
 
     public static final int NOTE_PRESSED = 1;
     public static final int NOTE_RELEASED = 0;
@@ -27,7 +25,7 @@ class PianoKeyboard extends View {
         strokePaint.setStyle(Paint.Style.STROKE);
         activePaint.setColor(Color.MAGENTA);
 
-        for(int i = 0; i < NOTE_COUNT; i++) {
+        for(int i = 0; i < MusicBox.NOTE_COUNT; i++) {
             notes[i] = NOTE_RELEASED;
         }
     }
@@ -54,7 +52,7 @@ class PianoKeyboard extends View {
 
     private int calcNoteState(int octave, int note, boolean isBlack)
     {
-        int start = 4 + 12 * octave;
+        int start = 3 + 12 * octave;
         int[] helperWhite = {0,2,4,5,7,9,11};
         int[] helperBlack = {1,3,0,6,8,10,0};
 
@@ -62,7 +60,7 @@ class PianoKeyboard extends View {
             start += helperBlack[note];
         else
             start += helperWhite[note];
-        if (start >= NOTE_COUNT)
+        if (start >= MusicBox.NOTE_COUNT)
             return NOTE_RELEASED;
         return notes[start];
     }
@@ -84,6 +82,8 @@ class PianoKeyboard extends View {
                         black_note_width, black_note_height);
         }
     }
+
+    @Override
     protected void onDraw(Canvas canvas) {
         float octaveWidth = (getWidth()-20) / 8;
         for (int i = 0; i < 8; i++) {
