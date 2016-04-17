@@ -1,11 +1,17 @@
 package com.example.link.pianoteacher;
 
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -32,12 +38,53 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void gameSettingsOK(View view) {
+        gameSettingWindow.dismiss();
+        CheckBox trebleBox = (CheckBox)gameSettingWindow.getContentView().findViewById(R.id.trebleCheck);
+        CheckBox bassBox = (CheckBox)gameSettingWindow.getContentView().findViewById(R.id.bassCheck);
+        if (trebleBox.isChecked() && bassBox.isChecked())
+            gameSettings.clefMode = ClefMode.BOTH;
+        else if (trebleBox.isChecked())
+            gameSettings.clefMode = ClefMode.TREBLE;
+        else if (bassBox.isChecked())
+            gameSettings.clefMode = ClefMode.BASS;
+    }
+
+    public void gameSettingsCancel(View view) {
+        gameSettingWindow.dismiss();
+    }
+
+    enum ClefMode {BASS, TREBLE, BOTH}
+    class GameSettings {
+        ClefMode clefMode = ClefMode.TREBLE;
+        boolean modifiers = false;
+    }
+
+    GameSettings gameSettings = new GameSettings();
+    PopupWindow gameSettingWindow;
+
+    public void openSettings(View view) {
+        if (gameSettingWindow.isShowing()) {
+            gameSettingsCancel(view);
+        } else {
+            if (currentMode != ApplicationMode.GAME) {
+                CheckBox trebleBox = (CheckBox)gameSettingWindow.getContentView().findViewById(R.id.trebleCheck);
+                CheckBox bassBox = (CheckBox)gameSettingWindow.getContentView().findViewById(R.id.bassCheck);
+
+                trebleBox.setChecked(gameSettings.clefMode == ClefMode.BOTH || gameSettings.clefMode == ClefMode.TREBLE);
+                bassBox.setChecked(gameSettings.clefMode == ClefMode.BOTH || gameSettings.clefMode == ClefMode.BASS);
+
+                gameSettingWindow.showAsDropDown(findViewById(R.id.startButton));
+            }
+        }
+    }
+
     enum ApplicationMode {START, GAME}
     private ApplicationMode currentMode = ApplicationMode.START;
 
     class GameController {
-        Random r = new Random();
-
+        private Random r = new Random();
+        private int score = 0;
         private int nextNote = MusicBox.C1_NOTE_INDEX;
 
         private int getRandomNote(int startIndex, int endIndex) {
@@ -45,18 +92,31 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void startGame() {
+            score = 0;
+            printMessage("Started", true);
             currentMode = ApplicationMode.GAME;
+            stove.setMode(StoveViewer.StaveMode.TREBLE);
+            staticStove.setMode(StoveViewer.StaveMode.TREBLE);
             requestNextNote();
         }
 
         private void requestNextNote() {
-            nextNote = getRandomNote(MusicBox.C1_NOTE_INDEX - 12, MusicBox.C1_NOTE_INDEX + 12);
+            int oldNote = nextNote;
+            while (oldNote == nextNote)
+                nextNote = getRandomNote(MusicBox.C1_NOTE_INDEX - 1, MusicBox.C1_NOTE_INDEX + 24);
             staticStove.setCurrentNote(nextNote);
         }
 
         void notePressed(int noteNum) {
-            if (noteNum == nextNote)
+            if (noteNum == nextNote) {
+                stove.setCurrentNote(MusicBox.INVALIDE_NOTE);
+                score++;
+                printMessage("score: "+score, true);
                 requestNextNote();
+            } else {
+                score--;
+                printMessage("incorrect", false);
+            }
         }
 
         public void stopGame() {
@@ -88,8 +148,6 @@ public class MainActivity extends AppCompatActivity {
             int state;
             String m = inputMessage.getData().getString("key");
             if (m != null) {
-                text.append(m);
-                text.append("\n");
                 String s = m.substring(0,2);
                 noteNum = Integer.parseInt(s, 16) - NOTE_SHIFT;
                 if (m.getBytes()[3] == 'u') {
@@ -117,8 +175,22 @@ public class MainActivity extends AppCompatActivity {
         keyboard = (PianoKeyboard)findViewById(R.id.keyboard);
         text.append("start");
         text.setFocusable(false);
+        LayoutInflater layoutInflater = (LayoutInflater)getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+        View settingsView = layoutInflater.inflate(R.layout.game_settings, null);
+
+        gameSettingWindow = new PopupWindow(settingsView, WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT);
+        gameSettingWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
 
         tryConnectToServer();
+    }
+
+    protected void printMessage(String message, boolean clean) {
+        if (clean) {
+            text.setText("");
+        }
+        text.append(message);
+        text.append("\n");
     }
 
     private Socket socket = null;
