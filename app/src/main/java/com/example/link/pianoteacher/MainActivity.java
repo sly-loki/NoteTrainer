@@ -86,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
         private Random r = new Random();
         private int score = 0;
         private int nextNote = MusicBox.C1_NOTE_INDEX;
+        private int minNote = 0;
+        private int maxNote = 88;
 
         private int getRandomNote(int startIndex, int endIndex) {
             return r.nextInt(endIndex - startIndex) + startIndex;
@@ -95,15 +97,28 @@ public class MainActivity extends AppCompatActivity {
             score = 0;
             printMessage("Started", true);
             currentMode = ApplicationMode.GAME;
-            stove.setMode(StoveViewer.StaveMode.TREBLE);
-            staticStove.setMode(StoveViewer.StaveMode.TREBLE);
+            StoveViewer.StaveMode mode;
+            if (gameSettings.clefMode == ClefMode.BASS) {
+                mode = StoveViewer.StaveMode.BASS;
+
+                minNote = MusicBox.C1_NOTE_INDEX - 24;
+                maxNote = MusicBox.C1_NOTE_INDEX + 2;
+            } else {
+                mode = StoveViewer.StaveMode.TREBLE;
+
+                minNote = MusicBox.C1_NOTE_INDEX - 1;
+                maxNote = MusicBox.C1_NOTE_INDEX + 24;
+            }
+            stove.setMode(mode);
+            staticStove.setMode(mode);
+
             requestNextNote();
         }
 
         private void requestNextNote() {
             int oldNote = nextNote;
             while (oldNote == nextNote)
-                nextNote = getRandomNote(MusicBox.C1_NOTE_INDEX - 1, MusicBox.C1_NOTE_INDEX + 24);
+                nextNote = getRandomNote(minNote, maxNote);
             staticStove.setCurrentNote(nextNote);
         }
 
