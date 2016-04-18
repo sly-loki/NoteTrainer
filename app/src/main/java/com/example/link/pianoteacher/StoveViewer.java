@@ -134,7 +134,7 @@ class StoveViewer extends View {
             canvas.drawBitmap(bassBitmap, getWidth() * 0.05f, getHeight() * 0.3f, p);
         }
 
-        if (desc.position < -7 || desc.position > 7)
+        if (desc.position < -9 || desc.position > 9)
             return;
 
         Bitmap note;
@@ -153,10 +153,16 @@ class StoveViewer extends View {
             alterY = y + 13;
         }
 
-        if (desc.position <= -6) {
-            float centralPoint = getWidth() * 0.4f;
+        float centralPoint = getWidth() * 0.4f;
+        if (desc.position <= -8)
+            canvas.drawLine(centralPoint, 6*interLineSpace+firstLine, centralPoint + 85, 6*interLineSpace+firstLine, p);
+        if (desc.position <= -6)
             canvas.drawLine(centralPoint, 5*interLineSpace+firstLine, centralPoint + 85, 5*interLineSpace+firstLine, p);
-        }
+
+        if (desc.position >= 6)
+            canvas.drawLine(centralPoint, firstLine - interLineSpace, centralPoint + 85, firstLine - interLineSpace, p);
+        if (desc.position >= 7)
+            canvas.drawLine(centralPoint, firstLine - 2*interLineSpace, centralPoint + 85, firstLine - 2*interLineSpace, p);
 
         switch (desc.modifier) {
             case DIES:
