@@ -101,13 +101,13 @@ public class MainActivity extends AppCompatActivity {
             if (gameSettings.clefMode == ClefMode.BASS) {
                 mode = StoveViewer.StaveMode.BASS;
 
-                minNote = MusicBox.C1_NOTE_INDEX - 24;
-                maxNote = MusicBox.C1_NOTE_INDEX + 2;
+                minNote = 14;
+                maxNote = 44;
             } else {
                 mode = StoveViewer.StaveMode.TREBLE;
 
-                minNote = MusicBox.C1_NOTE_INDEX - 1;
-                maxNote = MusicBox.C1_NOTE_INDEX + 24;
+                minNote = 34;
+                maxNote = 65;
             }
             stove.setMode(mode);
             staticStove.setMode(mode);
