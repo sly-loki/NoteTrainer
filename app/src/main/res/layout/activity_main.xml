@@ -16,8 +16,8 @@
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="fill_parent"
-            android:layout_weight="1">
+            android:layout_height="0px"
+            android:layout_weight="5">
             <com.example.link.pianoteacher.StoveViewer
                 android:id="@+id/stove"
                 android:layout_width="match_parent"
@@ -32,8 +32,8 @@
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="fill_parent"
-            android:layout_weight="1">
+            android:layout_height="0px"
+            android:layout_weight="3">
 
             <EditText
                 android:layout_width="match_parent"
@@ -67,21 +67,27 @@
 
         </LinearLayout>
 
+        <com.example.link.pianoteacher.TimeLine
+            android:id="@+id/timeLine"
+            android:layout_width="match_parent"
+            android:layout_height="0px"
+            android:layout_weight="5"/>
+
         <com.example.link.pianoteacher.PianoKeyboard
             android:id="@+id/keyboard"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_height="0px"
+            android:layout_weight="5" />
 
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="fill_parent"
-            android:layout_weight="1">
+            android:layout_height="0px"
+            android:layout_weight="2">
 
             <Button
-                android:layout_width="fill_parent"
-                android:layout_weight="50"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
                 android:layout_height="fill_parent"
                 android:text="Connect"
                 android:onClick="connectButtonClicked"
@@ -89,9 +95,9 @@
                 android:layout_gravity="left" />
 
             <TextView
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="fill_parent"
-                android:layout_weight="50"
+                android:layout_weight="1"
                 android:text="New Button"
                 android:id="@+id/statusLabel"
                 android:layout_gravity="right" />

@@ -19,6 +19,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText text;
     private TextView connectLabel;
     private PianoKeyboard keyboard;
+    private TimeLine timeLine;
 
     public void startGame(View view) {
         if (currentMode != ApplicationMode.GAME) {
@@ -175,7 +178,21 @@ public class MainActivity extends AppCompatActivity {
                         gameController.notePressed(noteNum);
                 }
                 keyboard.setNoteState(noteNum, state);
+                timeLine.setKeyState(noteNum, state);
             }
+        }
+    };
+
+    Timer timer = new Timer();
+    class Timeout extends TimerTask {
+        @Override
+        public void run() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    timeLine.timePassed(0.1f);
+                }
+            });
         }
     };
 
@@ -188,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
         text = (EditText)findViewById(R.id.editText);
         connectLabel = (TextView)findViewById(R.id.statusLabel);
         keyboard = (PianoKeyboard)findViewById(R.id.keyboard);
+        timeLine = (TimeLine)findViewById(R.id.timeLine);
         text.append("start");
         text.setFocusable(false);
         LayoutInflater layoutInflater = (LayoutInflater)getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -198,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
         gameSettingWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
 
         tryConnectToServer();
+        timer.schedule(new Timeout(), 0, 100);
     }
 
     protected void printMessage(String message, boolean clean) {
