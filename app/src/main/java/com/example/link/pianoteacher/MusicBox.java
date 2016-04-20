@@ -18,4 +18,19 @@ public class MusicBox {
     public static final int C5_NOTE_INDEX = C4_NOTE_INDEX + NOTES_IN_OCTAVE;
     public static final ArrayList<Integer> RELATIVE_BLACK_NOTE_INDEXES = new ArrayList<>(Arrays.asList(1, 3, 6, 8, 10));
     public static final int[] OCTAVE_INDEX_TO_WHITE_INDEX = {0,0,1,1,2,3,3,4,4,5,5,6,6,7};
+
+    public static boolean keyIsWhite(int key) {
+        if (key < 3)
+            return key != 1;
+        key = (key - 3) % MusicBox.NOTES_IN_OCTAVE;
+        return !MusicBox.RELATIVE_BLACK_NOTE_INDEXES.contains(key);
+    }
+
+    public static int getWhiteIndex(int key) {
+        if (key < 3)
+            return key / 2;
+        int octave = (key - 3) / MusicBox.NOTES_IN_OCTAVE;
+        return octave * MusicBox.WHITE_NOTES_IN_OCTAVE +
+                MusicBox.OCTAVE_INDEX_TO_WHITE_INDEX[(key - 3) % MusicBox.NOTES_IN_OCTAVE] + 2;
+    }
 }
