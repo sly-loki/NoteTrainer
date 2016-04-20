@@ -9,6 +9,9 @@ import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 class TimeLine extends View {
 
@@ -21,12 +24,12 @@ class TimeLine extends View {
     private float timeLenght;
 
     private class Event {
-        public int note = 0;
+        public int key = 0;
         public float startTime = 0;
         public float endTime = -1;
     }
-    private ArrayList<Event>[] eventLists = new ArrayList[MusicBox.NOTE_COUNT];
-    private Event[] events = new Event[MusicBox.NOTE_COUNT];
+    private LinkedList<Event> eventList = new LinkedList<>();
+    private Event[] currentEvents = new Event[MusicBox.NOTE_COUNT];
 
     public TimeLine(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -34,9 +37,6 @@ class TimeLine extends View {
         timeLenght = 5.0f;
         bluePaint.setColor(Color.BLUE);
         cyanPaint.setColor(Color.CYAN);
-        for (int i = 0; i < MusicBox.NOTE_COUNT; i++) {
-            eventLists[i] = new ArrayList<>();
-        }
     }
 
     protected void onDraw(Canvas canvas) {
@@ -49,23 +49,24 @@ class TimeLine extends View {
             canvas.drawLine(noteWidth*i, 0, noteWidth*i, getHeight(), mainPaint);
         }
 
-        for (int i = 0; i < MusicBox.NOTE_COUNT; i++) {
-            if (events[i] == null)
+        for (Iterator<Event> it = eventList.iterator(); it.hasNext();) {
+            Event e = it.next();
+            if (e == null)
                 continue;
-            if (events[i].endTime > 0 && events[i].endTime < startTime - timeLenght) {
-                events[i] = null;
+            if (e.endTime > 0 && e.endTime < startTime - timeLenght) {
+                it.remove();
                 continue;
             }
 
-            float x = MusicBox.getWhiteIndex(i) * noteWidth;
+            float x = MusicBox.getWhiteIndex(e.key) * noteWidth;
             float start_y = 0;
-            if (events[i].startTime < endTime)
-                start_y = height - (height / timeLenght * (startTime - events[i].startTime));
+            if (e.startTime < endTime)
+                start_y = height - (height / timeLenght * (startTime - e.startTime));
 
             float end_y = height;
-            if (events[i].endTime > 0)
-                end_y = height - (height / timeLenght * (startTime - events[i].endTime));
-            if (MusicBox.keyIsWhite(i)) {
+            if (e.endTime > 0)
+                end_y = height - (height / timeLenght * (startTime - e.endTime));
+            if (MusicBox.keyIsWhite(e.key)) {
                 canvas.drawRect(x, start_y, x + noteWidth, end_y, bluePaint);
             } else {
                 canvas.drawRect(x + noteWidth - blackNoteWidth * 0.5f, start_y, x + noteWidth + blackNoteWidth * 0.5f, end_y, cyanPaint);
@@ -93,11 +94,15 @@ class TimeLine extends View {
 
     public void setKeyState(int key, int state) {
         if (state == NOTE_PRESSED) {
-            events[key] = new Event();
-            events[key].startTime = startTime;
+            Event newEvent = new Event();
+            newEvent.startTime = startTime;
+            newEvent.key = key;
+
+            currentEvents[key] = newEvent;
+            eventList.add(newEvent);
         }
-        else if (events[key] != null) {
-            events[key].endTime = startTime;
+        else if (currentEvents[key] != null) {
+            currentEvents[key].endTime = startTime;
         }
         invalidate();
     }
