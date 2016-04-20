@@ -15,6 +15,7 @@ class TimeLine extends View {
 
     private Paint mainPaint = new Paint();
     private Paint bluePaint = new Paint();
+    private Paint cyanPaint = new Paint();
 
     private float startTime;
     private float timeLenght;
@@ -32,6 +33,7 @@ class TimeLine extends View {
         startTime = 0.0f;
         timeLenght = 5.0f;
         bluePaint.setColor(Color.BLUE);
+        cyanPaint.setColor(Color.CYAN);
         for (int i = 0; i < MusicBox.NOTE_COUNT; i++) {
             eventLists[i] = new ArrayList<>();
         }
@@ -40,17 +42,22 @@ class TimeLine extends View {
     protected void onDraw(Canvas canvas) {
         float endTime = startTime + timeLenght;
         float noteWidth = getWidth() / MusicBox.WHITE_NOTE_COUNT;
+        float blackNoteWidth = noteWidth * 0.6f;
         float height = getHeight();
+
+        for (int i = 1; i < MusicBox.WHITE_NOTE_COUNT; i++) {
+            canvas.drawLine(noteWidth*i, 0, noteWidth*i, getHeight(), mainPaint);
+        }
 
         for (int i = 0; i < MusicBox.NOTE_COUNT; i++) {
             if (events[i] == null)
                 continue;
             if (events[i].endTime > 0 && events[i].endTime < startTime - timeLenght) {
-                Log.d("111", "filtered " + events[i].endTime + " s: "+ startTime);
                 events[i] = null;
                 continue;
             }
 
+            float x = MusicBox.getWhiteIndex(i) * noteWidth;
             float start_y = 0;
             if (events[i].startTime < endTime)
                 start_y = height - (height / timeLenght * (startTime - events[i].startTime));
@@ -58,12 +65,13 @@ class TimeLine extends View {
             float end_y = height;
             if (events[i].endTime > 0)
                 end_y = height - (height / timeLenght * (startTime - events[i].endTime));
-            canvas.drawRect(i*noteWidth, start_y, i*noteWidth + noteWidth, end_y, bluePaint);
+            if (MusicBox.keyIsWhite(i)) {
+                canvas.drawRect(x, start_y, x + noteWidth, end_y, bluePaint);
+            } else {
+                canvas.drawRect(x + noteWidth - blackNoteWidth * 0.5f, start_y, x + noteWidth + blackNoteWidth * 0.5f, end_y, cyanPaint);
+            }
         }
 
-        for (int i = 1; i < MusicBox.WHITE_NOTE_COUNT; i++) {
-            canvas.drawLine(noteWidth*i, 0, noteWidth*i, getHeight(), mainPaint);
-        }
         final int LINE_DIST = 3;
         int intTime = (int)startTime;
         if (intTime % LINE_DIST != 0)
@@ -96,6 +104,11 @@ class TimeLine extends View {
 
     public void timePassed(float time) {
         startTime += time;
+        invalidate();
+    }
+
+    public void synchronizeTime(float time) {
+        startTime = time;
         invalidate();
     }
 
