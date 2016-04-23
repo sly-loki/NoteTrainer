@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
@@ -168,17 +169,31 @@ public class MainActivity extends AppCompatActivity {
             if (m != null) {
                 String s = m.substring(0,2);
                 noteNum = Integer.parseInt(s, 16) - NOTE_SHIFT;
+
+                String time = m.substring(5);
+                String[] times = time.split("[ ]+");
+                float[] multipliers = {3600, 60, 1, 0.001f};
+                float eventTime = 0;
+                for (int i = 0; i < 4; i++)
+                {
+                    eventTime += Integer.parseInt(times[i]) * multipliers[i];
+                }
+
                 if (m.getBytes()[3] == 'u') {
                     state = PianoKeyboard.NOTE_RELEASED;
                 }
-                else {
+                else if (m.getBytes()[3] == 'd') {
                     state = PianoKeyboard.NOTE_PRESSED;
                     stove.setCurrentNote(noteNum);
                     if (currentMode == ApplicationMode.GAME)
                         gameController.notePressed(noteNum);
                 }
+                else {
+                    timeLine.synchronizeTime(eventTime);
+                    return;
+                }
                 keyboard.setNoteState(noteNum, state);
-                timeLine.setKeyState(noteNum, state);
+                timeLine.setKeyState(noteNum, state, eventTime);
             }
         }
     };
@@ -278,9 +293,9 @@ public class MainActivity extends AppCompatActivity {
 
             while(true) {
                 try {
-                    if (is.read(message, 0, 5) == 5) {
+                    if (is.read(message, 0, 17) == 17) {
                         Message mess = new Message();
-                        mess.getData().putString("key", new String(message, 0, 5));
+                        mess.getData().putString("key", new String(message, 0, 17));
                         messageHandler.sendMessage(mess);
                     }
                 }

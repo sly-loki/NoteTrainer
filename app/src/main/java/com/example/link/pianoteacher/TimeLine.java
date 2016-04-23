@@ -92,17 +92,17 @@ class TimeLine extends View {
     public static final int NOTE_PRESSED = 1;
     public static final int NOTE_RELEASED = 0;
 
-    public void setKeyState(int key, int state) {
+    public void setKeyState(int key, int state, float eventTime) {
         if (state == NOTE_PRESSED) {
             Event newEvent = new Event();
-            newEvent.startTime = startTime;
+            newEvent.startTime = eventTime;
             newEvent.key = key;
 
             currentEvents[key] = newEvent;
             eventList.add(newEvent);
         }
         else if (currentEvents[key] != null) {
-            currentEvents[key].endTime = startTime;
+            currentEvents[key].endTime = eventTime;
         }
         invalidate();
     }
