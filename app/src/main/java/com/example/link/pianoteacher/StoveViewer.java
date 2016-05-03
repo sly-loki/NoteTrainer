@@ -97,7 +97,7 @@ class StoveViewer extends View {
         super.onSizeChanged(w, h, oldw, oldh);
         float trebleProportion = h * 0.7f / trebleBitmap.getHeight();
         float bassProportion = h * 0.4f / bassBitmap.getHeight();
-        float noteProportion = h * 0.5f / noteBitmap.getHeight();
+        float noteProportion = h * 0.45f / noteBitmap.getHeight();
         float alterationProportion = h * 0.15f / sharpBitmap.getHeight();
 
         trebleBitmap = Bitmap.createScaledBitmap(trebleBitmap, (int)(trebleBitmap.getWidth()*trebleProportion), (int)(trebleBitmap.getHeight()*trebleProportion), false);
@@ -114,8 +114,8 @@ class StoveViewer extends View {
     @Override
     protected void onDraw(Canvas canvas) {
 
-        int interLineSpace = getHeight() / 10;
-        int firstLine = 3*interLineSpace;
+        int interLineSpace = getHeight() / 12;
+        int firstLine = 4*interLineSpace;
 
         for (int i = 0; i < 5; i++) {
             canvas.drawLine(getWidth()*0.05f, i*interLineSpace+firstLine, getWidth()*0.95f, i*interLineSpace+firstLine, p);
@@ -134,7 +134,7 @@ class StoveViewer extends View {
             canvas.drawBitmap(bassBitmap, getWidth() * 0.05f, getHeight() * 0.3f, p);
         }
 
-        if (desc.position < -9 || desc.position > 9)
+        if (desc.position < -11 || desc.position > 11)
             return;
 
         Bitmap note;
@@ -143,17 +143,19 @@ class StoveViewer extends View {
         float y;
         float alterY;
         if (desc.position < 0) {
-            y = baseY - desc.position*interLineSpace*0.5f - noteBitmap.getHeight() + 19;
+            y = baseY - desc.position*interLineSpace*0.5f - noteBitmap.getHeight() + 16;
             note = noteBitmap;
             alterY = y + note.getHeight() - sharpBitmap.getHeight() - 10;
         }
         else {
-            y = baseY - desc.position*interLineSpace*0.5f - 55;
+            y = baseY - desc.position*interLineSpace*0.5f - 48;
             note = downNoteBitmap;
             alterY = y + 13;
         }
 
         float centralPoint = getWidth() * 0.4f;
+        if (desc.position <= -10)
+            canvas.drawLine(centralPoint, 7*interLineSpace+firstLine, centralPoint + 85, 7*interLineSpace+firstLine, p);
         if (desc.position <= -8)
             canvas.drawLine(centralPoint, 6*interLineSpace+firstLine, centralPoint + 85, 6*interLineSpace+firstLine, p);
         if (desc.position <= -6)
@@ -161,8 +163,11 @@ class StoveViewer extends View {
 
         if (desc.position >= 6)
             canvas.drawLine(centralPoint, firstLine - interLineSpace, centralPoint + 85, firstLine - interLineSpace, p);
-        if (desc.position >= 7)
+        if (desc.position >= 8)
             canvas.drawLine(centralPoint, firstLine - 2*interLineSpace, centralPoint + 85, firstLine - 2*interLineSpace, p);
+        if (desc.position >= 10)
+            canvas.drawLine(centralPoint, firstLine - 3*interLineSpace, centralPoint + 85, firstLine - 3*interLineSpace, p);
+
 
         switch (desc.modifier) {
             case DIES:

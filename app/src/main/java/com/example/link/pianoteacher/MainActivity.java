@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         private int score = 0;
         private int nextNote = MusicBox.C1_NOTE_INDEX;
         private int minNote = 0;
-        private int maxNote = 88;
+        private int maxNote = 87;
 
         private int getRandomNote(int startIndex, int endIndex) {
             return r.nextInt(endIndex - startIndex) + startIndex;
@@ -105,13 +105,13 @@ public class MainActivity extends AppCompatActivity {
             if (gameSettings.clefMode == ClefMode.BASS) {
                 mode = StoveViewer.StaveMode.BASS;
 
-                minNote = 14;
-                maxNote = 44;
+                minNote = 10;
+                maxNote = 49;
             } else {
                 mode = StoveViewer.StaveMode.TREBLE;
 
-                minNote = 34;
-                maxNote = 65;
+                minNote = 31;
+                maxNote = 69;
             }
             stove.setMode(mode);
             staticStove.setMode(mode);
