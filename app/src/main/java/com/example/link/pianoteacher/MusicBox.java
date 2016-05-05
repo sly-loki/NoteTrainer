@@ -19,6 +19,8 @@ class MusicBox {
     public static final ArrayList<Integer> RELATIVE_BLACK_NOTE_INDEXES = new ArrayList<>(Arrays.asList(1, 3, 6, 8, 10));
     public static final int[] OCTAVE_INDEX_TO_WHITE_INDEX = {0,0,1,1,2,3,3,4,4,5,5,6,6,7};
 
+    public enum Octaves {SUBCONTR, CONTR, BIG, SMALL, FIRST, SECOND, THIRD, FOURTH, FIFTH}
+
     public static boolean keyIsWhite(int key) {
         if (key < 3)
             return key != 1;
