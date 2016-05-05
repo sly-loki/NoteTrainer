@@ -61,6 +61,10 @@ public class MainActivity extends AppCompatActivity {
     public void nextButtonClicked(View view) {
     }
 
+    public void startAudioGame(View view) {
+        
+    }
+
     enum ClefMode {BASS, TREBLE, BOTH}
     class GameSettings {
         ClefMode clefMode = ClefMode.TREBLE;
