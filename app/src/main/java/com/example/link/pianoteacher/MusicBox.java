@@ -3,7 +3,7 @@ package com.example.link.pianoteacher;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class MusicBox {
+class MusicBox {
     public static final int INVALIDE_NOTE = -1;
     public static final int WHITE_NOTE_COUNT = 52;
     public static final int NOTE_COUNT = 88;
