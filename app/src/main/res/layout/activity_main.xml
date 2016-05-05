@@ -20,14 +20,21 @@
             android:layout_weight="5">
             <com.example.link.pianoteacher.StoveViewer
                 android:id="@+id/stove"
-                android:layout_width="match_parent"
+                android:layout_width="0px"
                 android:layout_height="match_parent"
                 android:layout_weight="1" />
             <com.example.link.pianoteacher.StoveViewer
                 android:id="@+id/stove_2"
-                android:layout_width="match_parent"
+                android:layout_width="0px"
                 android:layout_height="match_parent"
                 android:layout_weight="1" />
+            <Button
+                android:layout_width="0px"
+                android:layout_height="match_parent"
+                android:layout_weight="0.2"
+                android:text=">"
+                android:id="@+id/nextButton"
+                android:onClick="nextButtonClicked"/>
         </LinearLayout>
         <LinearLayout
             android:orientation="horizontal"
