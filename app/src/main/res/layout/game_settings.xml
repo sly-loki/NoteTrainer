@@ -28,13 +28,100 @@
         android:id="@+id/alterCheck"
         android:layout_gravity="center_horizontal" />
 
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal">
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="0px"
+            android:layout_weight="1">
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="sub"
+                android:layout_weight="1"
+                android:id="@+id/checkBox" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="conrt"
+                android:layout_weight="1"
+                android:id="@+id/checkBox2" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="big"
+                android:layout_weight="1"
+                android:id="@+id/checkBox3" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="small"
+                android:layout_weight="1"
+                android:id="@+id/checkBox4" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="first"
+                android:layout_weight="1"
+                android:id="@+id/checkBox5" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="second"
+                android:layout_weight="1"
+                android:id="@+id/checkBox6" />
+        </TableRow>
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="0px"
+            android:layout_weight="1">
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="third"
+                android:layout_weight="1"
+                android:id="@+id/checkBox7" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="fourth"
+                android:layout_weight="1"
+                android:id="@+id/checkBox8" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="fifth"
+                android:layout_weight="1"
+                android:id="@+id/checkBox9" />
+        </TableRow>
+    </TableLayout>
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal">
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="0px"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="OK"
@@ -42,7 +129,7 @@
             android:onClick="gameSettingsOK"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="0px"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Cancel"
