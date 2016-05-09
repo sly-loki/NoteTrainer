@@ -7,9 +7,11 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.PopupWindow;
@@ -19,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -31,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView connectLabel;
     private PianoKeyboard keyboard;
     private TimeLine timeLine;
+
+    private final int NOTE_SHIFT = 21;
 
     public void startGame(View view) {
         if (currentMode != ApplicationMode.GAME) {
@@ -62,17 +67,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startAudioGame(View view) {
-        
+
+        if (audioGameWindow.isShowing()) {
+            audioGameWindow.dismiss();
+        } else {
+            if (currentMode != ApplicationMode.GAME) {
+                audioGameWindow.showAtLocation(findViewById(R.id.centralLayout), Gravity.CENTER, 0, 0);
+            }
+        }
     }
 
     enum ClefMode {BASS, TREBLE, BOTH}
     class GameSettings {
         ClefMode clefMode = ClefMode.TREBLE;
+        ArrayList<MusicBox.Octaves> allowedOctaves = new ArrayList<>();
         boolean modifiers = false;
     }
 
     GameSettings gameSettings = new GameSettings();
     PopupWindow gameSettingWindow;
+    PopupWindow audioGameWindow;
 
     public void openSettings(View view) {
         if (gameSettingWindow.isShowing()) {
@@ -90,8 +104,61 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    enum ApplicationMode {START, GAME}
+    enum ApplicationMode {START, GAME, AUDIO_GAME}
     private ApplicationMode currentMode = ApplicationMode.START;
+
+
+    class AudioGameController implements View.OnClickListener {
+
+        private int currentNote = -1;
+        private Random r = new Random();
+
+        private int getRandomNote(int startIndex, int endIndex) {
+            return r.nextInt(endIndex - startIndex) + startIndex;
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (v.getId() == R.id.againButton) {
+                playCurrentNote();
+            } else if (v.getId() == R.id.nextButton) {
+                requestNextNote();
+            } else if (v.getId() == R.id.answerButton) {
+                showAnswer();
+            }
+        }
+
+        void playCurrentNote() {
+            if (serverConnectionTask != null) {
+                try {
+                    byte data[] = new byte[3];
+                    data[0] = 'p';
+                    data[1] = (byte)(currentNote + NOTE_SHIFT);
+                    data[2] = 0;
+                    out.write(data);
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        void requestNextNote() {
+            currentNote = getRandomNote(MusicBox.C1_NOTE_INDEX, MusicBox.C1_NOTE_INDEX+MusicBox.NOTES_IN_OCTAVE);
+            playCurrentNote();
+        }
+
+        void showAnswer() {
+            StoveViewer answerViewer = (StoveViewer)audioGameWindow.getContentView().findViewById(R.id.gameStove);
+            if (currentNote < MusicBox.C1_NOTE_INDEX)
+                answerViewer.setMode(StoveViewer.StaveMode.BASS);
+            else
+                answerViewer.setMode(StoveViewer.StaveMode.TREBLE);
+            answerViewer.setCurrentNote(currentNote);
+        }
+    }
+
+    AudioGameController audioGameController = new AudioGameController();
 
     class GameController {
         private Random r = new Random();
@@ -154,7 +221,6 @@ public class MainActivity extends AppCompatActivity {
 
     protected Handler messageHandler = new Handler() {
 
-        private final int NOTE_SHIFT = 21;
         @Override
         public void handleMessage(Message inputMessage) {
             super.handleMessage(inputMessage);
@@ -230,12 +296,30 @@ public class MainActivity extends AppCompatActivity {
         timeLine = (TimeLine)findViewById(R.id.timeLine);
         text.append("start");
         text.setFocusable(false);
+
+        //create setting window
         LayoutInflater layoutInflater = (LayoutInflater)getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
         View settingsView = layoutInflater.inflate(R.layout.game_settings, null);
 
         gameSettingWindow = new PopupWindow(settingsView, WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT);
         gameSettingWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
+
+        //create audio game window
+        LayoutInflater audioGameInflater = (LayoutInflater)getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+        View audioGameView = audioGameInflater.inflate(R.layout.audio_game, null);
+
+        audioGameWindow = new PopupWindow(audioGameView, WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT);
+        audioGameWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
+
+        Button playAgainButton = (Button)audioGameView.findViewById(R.id.againButton);
+        Button showAnswerButton = (Button)audioGameView.findViewById(R.id.answerButton);
+        Button nextNoteButton = (Button)audioGameView.findViewById(R.id.nextButton);
+
+        playAgainButton.setOnClickListener(audioGameController);
+        nextNoteButton.setOnClickListener(audioGameController);
+        showAnswerButton.setOnClickListener(audioGameController);
 
         tryConnectToServer();
         timer.schedule(new Timeout(), 0, 100);

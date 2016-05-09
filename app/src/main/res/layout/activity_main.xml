@@ -10,6 +10,7 @@
     tools:context="com.example.link.pianoteacher.MainActivity">
 
     <LinearLayout
+        android:id="@+id/centralLayout"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="fill_parent">
